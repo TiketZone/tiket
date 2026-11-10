@@ -16,13 +16,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class PerformanceServiceImpl implements PerformanceService {
 
     private final PerformanceRepository performanceRepository;
 
     @Override
-    @Transactional
     public PerformanceResponse create(PerformanceRequest request) {
         Performance performance = Performance.builder()
                 .title(request.title())
@@ -32,6 +31,7 @@ public class PerformanceServiceImpl implements PerformanceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PerformanceResponse> getAll() {
         return performanceRepository.findAllNotDeleted().stream()
                 .map(PerformanceResponse::from)
@@ -39,12 +39,12 @@ public class PerformanceServiceImpl implements PerformanceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PerformanceResponse get(UUID id) {
         return PerformanceResponse.from(findPerformance(id));
     }
 
     @Override
-    @Transactional
     public PerformanceResponse update(UUID id, PerformanceRequest request) {
         Performance performance = findPerformance(id);
         performance.update(request.title(), request.content());
@@ -52,7 +52,6 @@ public class PerformanceServiceImpl implements PerformanceService {
     }
 
     @Override
-    @Transactional
     public void delete(UUID id) {
         findPerformance(id).delete();
     }
