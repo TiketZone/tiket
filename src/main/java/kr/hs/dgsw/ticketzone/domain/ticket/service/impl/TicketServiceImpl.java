@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -30,5 +33,16 @@ public class TicketServiceImpl implements TicketService {
                 .performance(performance)
                 .build();
         return TicketResponse.from(ticketRepository.save(ticket));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TicketResponse> getAll(UUID performanceId) {
+        performanceRepository.findNotDeletedById(performanceId)
+                .orElseThrow(() -> new CommonException(PerformanceStatusCode.PERFORMANCE_NOT_FOUND));
+
+        return ticketRepository.findAllByPerformanceId(performanceId).stream()
+                .map(TicketResponse::from)
+                .toList();
     }
 }

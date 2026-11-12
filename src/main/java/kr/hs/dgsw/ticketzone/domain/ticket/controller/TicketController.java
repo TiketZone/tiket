@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/ticket")
 @RequiredArgsConstructor
@@ -18,5 +21,12 @@ public class TicketController {
     @PostMapping
     public ResponseEntity<CommonResponse<TicketResponse>> issue(@RequestBody TicketRequest request) {
         return CommonResponse.ok("티켓 발권 성공", ticketService.issue(request)).toResponseEntity();
+    }
+
+    @GetMapping
+    public ResponseEntity<CommonResponse<List<TicketResponse>>> getAll(
+            @RequestParam("performance_id") UUID performanceId
+    ) {
+        return CommonResponse.ok("티켓 조회 성공", ticketService.getAll(performanceId)).toResponseEntity();
     }
 }
