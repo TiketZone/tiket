@@ -32,7 +32,7 @@ public class TicketServiceImpl implements TicketService {
         Ticket ticket = Ticket.builder()
                 .performance(performance)
                 .build();
-        return TicketResponse.from(ticketRepository.save(ticket));
+        return toResponse(ticketRepository.save(ticket));
     }
 
     @Override
@@ -42,7 +42,16 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new CommonException(PerformanceStatusCode.PERFORMANCE_NOT_FOUND));
 
         return ticketRepository.findAllByPerformanceId(performanceId).stream()
-                .map(TicketResponse::from)
+                .map(this::toResponse)
                 .toList();
+    }
+
+    private TicketResponse toResponse(Ticket ticket) {
+        return TicketResponse.of(
+                ticket.getId(),
+                ticket.getPerformance().getId(),
+                ticket.getPerformance().getTitle(),
+                ticket.getIssuedAt()
+        );
     }
 }
