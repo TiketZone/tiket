@@ -33,7 +33,7 @@ public class PerformanceServiceImpl implements PerformanceService {
     @Override
     @Transactional(readOnly = true)
     public List<PerformanceResponse> getAll() {
-        return performanceRepository.findAllNotDeleted().stream()
+        return performanceRepository.findAllByDeletedFalse().stream()
                 .map(PerformanceResponse::from)
                 .toList();
     }
@@ -57,7 +57,7 @@ public class PerformanceServiceImpl implements PerformanceService {
     }
 
     private Performance findPerformance(UUID id) {
-        return performanceRepository.findNotDeletedById(id)
+        return performanceRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new CommonException(PerformanceStatusCode.PERFORMANCE_NOT_FOUND));
     }
 }
