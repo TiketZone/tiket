@@ -12,8 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 @SpringBootTest
 @Transactional
 class PerformanceServiceTest {
@@ -55,9 +53,13 @@ class PerformanceServiceTest {
     }
 
     private void assertNotFound(UUID id) {
-        assertThatThrownBy(() -> performanceService.get(id))
-                .isInstanceOf(CommonException.class)
-                .extracting("statusCode")
-                .isEqualTo(PerformanceStatusCode.PERFORMANCE_NOT_FOUND);
+        CommonException exception = null;
+        try {
+            performanceService.get(id);
+        } catch (CommonException e) {
+            exception = e;
+        }
+        assertThat(exception).isNotNull();
+        assertThat(exception.statusCode).isEqualTo(PerformanceStatusCode.PERFORMANCE_NOT_FOUND);
     }
 }
