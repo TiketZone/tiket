@@ -1,6 +1,7 @@
 package kr.hs.dgsw.ticketzone.domain.ticket.entity;
 
 import jakarta.persistence.*;
+import kr.hs.dgsw.ticketzone.domain.member.entity.Member;
 import kr.hs.dgsw.ticketzone.domain.performance.entity.Performance;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,10 @@ public class Ticket {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performance_id", nullable = false)
     private Performance performance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
