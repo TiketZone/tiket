@@ -1,15 +1,24 @@
 package kr.hs.dgsw.ticketzone.domain.ticket.controller;
 
+import kr.hs.dgsw.ticketzone.domain.member.entity.Member;
+import kr.hs.dgsw.ticketzone.domain.member.entity.Role;
 import kr.hs.dgsw.ticketzone.domain.performance.exception.PerformanceStatusCode;
+import kr.hs.dgsw.ticketzone.domain.ticket.data.request.TicketRequest;
 import kr.hs.dgsw.ticketzone.domain.ticket.data.response.TicketResponse;
 import kr.hs.dgsw.ticketzone.domain.ticket.service.TicketService;
 import kr.hs.dgsw.ticketzone.global.exception.CommonException;
 import kr.hs.dgsw.ticketzone.global.handler.GlobalExceptionHandler;
+import kr.hs.dgsw.ticketzone.global.jwt.MemberDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TicketController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 class TicketControllerTest {
 
@@ -32,11 +42,33 @@ class TicketControllerTest {
     @MockitoBean
     private TicketService ticketService;
 
+    private UUID memberId;
+
+    @BeforeEach
+    void setAuthenticatedMember() {
+        memberId = UUID.randomUUID();
+        Member member = Member.builder()
+                .id(memberId)
+                .username("test-user")
+                .password("encoded-password")
+                .role(Role.ROLE_USER)
+                .build();
+        MemberDetails memberDetails = new MemberDetails(member);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(memberDetails, null, memberDetails.getAuthorities())
+        );
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     void issueReturnsIssuedTicket() throws Exception {
         UUID performanceId = UUID.randomUUID();
         UUID ticketId = UUID.randomUUID();
-        when(ticketService.issue(any())).thenReturn(
+        when(ticketService.issue(any(TicketRequest.class), any(UUID.class))).thenReturn(
                 TicketResponse.of(
                         ticketId,
                         performanceId,
@@ -60,7 +92,7 @@ class TicketControllerTest {
 
     @Test
     void issueReturnsNotFoundWhenPerformanceDoesNotExist() throws Exception {
-        when(ticketService.issue(any()))
+        when(ticketService.issue(any(TicketRequest.class), any(UUID.class)))
                 .thenThrow(new CommonException(PerformanceStatusCode.PERFORMANCE_NOT_FOUND));
 
         mockMvc.perform(post("/api/ticket")

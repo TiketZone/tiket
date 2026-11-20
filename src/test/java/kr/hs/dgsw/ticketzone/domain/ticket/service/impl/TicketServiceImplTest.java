@@ -1,5 +1,8 @@
 package kr.hs.dgsw.ticketzone.domain.ticket.service.impl;
 
+import kr.hs.dgsw.ticketzone.domain.member.entity.Member;
+import kr.hs.dgsw.ticketzone.domain.member.entity.Role;
+import kr.hs.dgsw.ticketzone.domain.member.repository.MemberJpaRepository;
 import kr.hs.dgsw.ticketzone.domain.performance.entity.Performance;
 import kr.hs.dgsw.ticketzone.domain.performance.exception.PerformanceStatusCode;
 import kr.hs.dgsw.ticketzone.domain.performance.repository.PerformanceRepository;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +37,9 @@ class TicketServiceImplTest {
 
     @Mock
     private PerformanceRepository performanceRepository;
+
+    @Mock
+    private MemberJpaRepository memberRepository;
 
     @InjectMocks
     private TicketServiceImpl ticketService;
@@ -66,10 +73,12 @@ class TicketServiceImplTest {
     @Test
     void issueThrowsWhenPerformanceDoesNotExist() {
         UUID performanceId = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member(memberId)));
         when(performanceRepository.findNotDeletedById(performanceId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ticketService.issue(new TicketRequest(performanceId)))
+        assertThatThrownBy(() -> ticketService.issue(new TicketRequest(performanceId), memberId))
                 .isInstanceOfSatisfying(CommonException.class, exception ->
                         assertThat(exception.statusCode)
                                 .isEqualTo(PerformanceStatusCode.PERFORMANCE_NOT_FOUND)
@@ -81,20 +90,32 @@ class TicketServiceImplTest {
     @Test
     void issueSavesTicketForExistingPerformance() {
         UUID performanceId = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
         Performance performance = Performance.builder()
                 .id(performanceId)
                 .title("콘서트")
                 .build();
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member(memberId)));
         when(performanceRepository.findNotDeletedById(performanceId))
                 .thenReturn(Optional.of(performance));
         when(ticketRepository.save(any(Ticket.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        TicketResponse response = ticketService.issue(new TicketRequest(performanceId));
+        TicketResponse response = ticketService.issue(new TicketRequest(performanceId), memberId);
 
         assertThat(response.performanceId()).isEqualTo(performanceId);
         assertThat(response.performanceTitle()).isEqualTo("콘서트");
         assertThat(response.issuedAt()).isNotNull();
         verify(ticketRepository).save(any(Ticket.class));
+    }
+
+    private Member member(UUID memberId) {
+        Member member = Member.builder()
+                .username("test-user")
+                .password("encoded-password")
+                .role(Role.ROLE_USER)
+                .build();
+        ReflectionTestUtils.setField(member, "id", memberId);
+        return member;
     }
 }
