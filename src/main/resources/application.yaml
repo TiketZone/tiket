@@ -16,7 +16,13 @@ spring:
       enabled: true
       path: /h2-console
 
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
   jpa:
+    defer-datasource-initialization: true   # Hibernate 테이블 생성 후 data.sql 실행
     hibernate:
       ddl-auto: update
     properties:
