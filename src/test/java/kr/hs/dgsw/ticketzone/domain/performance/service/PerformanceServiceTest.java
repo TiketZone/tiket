@@ -9,9 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
 @Transactional
 class PerformanceServiceTest {
@@ -20,42 +22,68 @@ class PerformanceServiceTest {
     private PerformanceService performanceService;
 
     @Test
-    void 공연_등록_후_조회() {
-        PerformanceResponse created = performanceService.create(new PerformanceRequest("제목", "내용"));
+    void createTest() {
+        PerformanceResponse response = performanceService.create(new PerformanceRequest("공연", "공연 내용"));
 
-        assertThat(performanceService.get(created.id())).isEqualTo(created);
-        assertThat(performanceService.getAll()).contains(created);
+        assertThat(response.id()).isNotNull();
+        assertThat(response.title()).isEqualTo("공연");
+        assertThat(response.content()).isEqualTo("공연 내용");
     }
 
     @Test
-    void 공연_수정() {
-        UUID id = performanceService.create(new PerformanceRequest("제목", "내용")).id();
+    void getTest() {
+        PerformanceResponse saved = performanceService.create(new PerformanceRequest("공연", "공연 내용"));
 
-        PerformanceResponse updated = performanceService.update(id, new PerformanceRequest("새 제목", "새 내용"));
+        PerformanceResponse response = performanceService.get(saved.id());
 
-        assertThat(updated).isEqualTo(new PerformanceResponse(id, "새 제목", "새 내용"));
-        assertThat(performanceService.get(id)).isEqualTo(updated);
+        assertThat(response.title()).isEqualTo("공연");
+        assertThat(response.content()).isEqualTo("공연 내용");
     }
 
     @Test
-    void 삭제된_공연은_조회되지_않음() {
-        PerformanceResponse created = performanceService.create(new PerformanceRequest("제목", "내용"));
+    void getAllTest() {
+        performanceService.create(new PerformanceRequest("공연1", "내용1"));
+        performanceService.create(new PerformanceRequest("공연2", "내용2"));
 
-        performanceService.delete(created.id());
+        List<PerformanceResponse> list = performanceService.getAll();
 
-        assertThat(performanceService.getAll()).doesNotContain(created);
-        assertNotFound(created.id());
+        assertThat(list.size()).isEqualTo(2);
     }
 
     @Test
-    void 없는_공연은_NOT_FOUND() {
-        assertNotFound(UUID.randomUUID());
+    void updateTest() {
+        PerformanceResponse saved = performanceService.create(new PerformanceRequest("공연", "공연 내용"));
+
+        performanceService.update(saved.id(), new PerformanceRequest("수정된 공연", "수정된 내용"));
+
+        PerformanceResponse response = performanceService.get(saved.id());
+        assertThat(response.title()).isEqualTo("수정된 공연");
+        assertThat(response.content()).isEqualTo("수정된 내용");
     }
 
-    private void assertNotFound(UUID id) {
+    @Test
+    void deleteTest() {
+        PerformanceResponse saved = performanceService.create(new PerformanceRequest("공연", "공연 내용"));
+
+        performanceService.delete(saved.id());
+
+        assertThat(performanceService.getAll().size()).isEqualTo(0);
+
         CommonException exception = null;
         try {
-            performanceService.get(id);
+            performanceService.get(saved.id());
+        } catch (CommonException e) {
+            exception = e;
+        }
+        assertThat(exception).isNotNull();
+        assertThat(exception.statusCode).isEqualTo(PerformanceStatusCode.PERFORMANCE_NOT_FOUND);
+    }
+
+    @Test
+    void getNotFoundTest() {
+        CommonException exception = null;
+        try {
+            performanceService.get(UUID.randomUUID());
         } catch (CommonException e) {
             exception = e;
         }
