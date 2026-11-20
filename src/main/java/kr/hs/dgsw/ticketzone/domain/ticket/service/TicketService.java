@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TicketService {
-    TicketResponse issue(TicketRequest request);
+    TicketResponse issue(TicketRequest request, UUID memberId);
     List<TicketResponse> getAll(UUID performanceId);
+    List<TicketResponse> getMyTickets(UUID memberId);
 }
