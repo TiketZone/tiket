@@ -1,0 +1,6 @@
+package kr.hs.dgsw.ticketzone.domain.member.entity;
+
+public enum Role {
+    ROLE_USER,
+    ROLE_ADMIN
+}
